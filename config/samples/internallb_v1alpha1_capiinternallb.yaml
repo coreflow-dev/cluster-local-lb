@@ -1,0 +1,10 @@
+apiVersion: internallb.io.schaber/v1alpha1
+kind: CapiInternalLb
+metadata:
+  labels:
+    app.kubernetes.io/name: kubernetes-capi-local-loadbalancer
+    app.kubernetes.io/managed-by: kustomize
+  name: capiinternallb-sample
+spec:
+
+# TODO(user): Add fields here

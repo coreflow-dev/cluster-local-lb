@@ -1,0 +1,28 @@
+# This rule is not used by the project kubernetes-capi-local-loadbalancer itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to internallb.io.schaber resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: kubernetes-capi-local-loadbalancer
+    app.kubernetes.io/managed-by: kustomize
+  name: capiinternallb-viewer-role
+rules:
+  - apiGroups:
+      - internallb.io.schaber
+    resources:
+      - capiinternallbs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - internallb.io.schaber
+    resources:
+      - capiinternallbs/status
+    verbs:
+      - get

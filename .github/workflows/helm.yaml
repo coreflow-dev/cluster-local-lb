@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Kubebuilder
         run: |
-          KUBEBUILDER_VERSION="3.14.1" # ToDo: align versions, get this all from nix?
+          KUBEBUILDER_VERSION="4.15.0" # ToDo: align versions, get this all from nix?
           curl -L -o kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_linux_amd64
           chmod +x kubebuilder
           sudo mv kubebuilder /usr/local/bin/

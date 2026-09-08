@@ -34,16 +34,16 @@ import (
 )
 
 // namespace where the project is deployed in
-const namespace = "kubernetes-capi-local-loadbalancer-system"
+const namespace = "cluster-local-lb-system"
 
 // serviceAccountName created for the project
-const serviceAccountName = "kubernetes-capi-local-loadbalancer-controller-manager"
+const serviceAccountName = "cluster-local-lb-controller-manager"
 
 // metricsServiceName is the name of the metrics service of the project
-const metricsServiceName = "kubernetes-capi-local-loadbalancer-controller-manager-metrics-service"
+const metricsServiceName = "cluster-local-lb-controller-manager-metrics-service"
 
 // metricsRoleBindingName is the name of the RBAC that will be created to allow get the metrics data
-const metricsRoleBindingName = "kubernetes-capi-local-loadbalancer-metrics-binding"
+const metricsRoleBindingName = "cluster-local-lb-metrics-binding"
 
 var _ = Describe("Manager", Ordered, func() {
 	var controllerPodName string
@@ -176,7 +176,7 @@ var _ = Describe("Manager", Ordered, func() {
 		It("should ensure the metrics endpoint is serving metrics", func() {
 			By("creating a ClusterRoleBinding for the service account to allow access to metrics")
 			cmd := exec.Command("kubectl", "create", "clusterrolebinding", metricsRoleBindingName,
-				"--clusterrole=kubernetes-capi-local-loadbalancer-metrics-reader",
+				"--clusterrole=cluster-local-lb-metrics-reader",
 				fmt.Sprintf("--serviceaccount=%s:%s", namespace, serviceAccountName),
 			)
 			_, err := utils.Run(cmd)

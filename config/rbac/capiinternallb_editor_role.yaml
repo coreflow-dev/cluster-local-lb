@@ -1,4 +1,4 @@
-# This rule is not used by the project kubernetes-capi-local-loadbalancer itself.
+# This rule is not used by the project cluster-local-lb itself.
 # It is provided to allow the cluster admin to help manage permissions for users.
 #
 # Grants permissions to create, update, and delete resources within the internallb.io.schaber.
@@ -8,7 +8,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: kubernetes-capi-local-loadbalancer
+    app.kubernetes.io/name: cluster-local-lb
     app.kubernetes.io/managed-by: kustomize
   name: capiinternallb-editor-role
 rules:

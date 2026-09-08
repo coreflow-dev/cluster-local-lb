@@ -1,0 +1,14 @@
+apiVersion: v2
+name: cluster-local-lb
+description: A Helm chart to distribute cluster-local-lb
+type: application
+
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - kubernetes
+  - operator
+
+annotations:
+  kubebuilder.io/generated-by: kubebuilder

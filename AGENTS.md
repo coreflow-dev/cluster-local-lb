@@ -1,4 +1,4 @@
-# kubernetes-capi-local-loadbalancer - AI Agent Guide
+# Kubernetes Cluster-Local Loadbalancer - AI Agent Guide
 
 ## Project Structure
 

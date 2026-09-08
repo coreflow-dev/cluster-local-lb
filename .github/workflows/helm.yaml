@@ -1,0 +1,48 @@
+name: Publish Helm Chart
+
+on:
+  push:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-helm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install Kubebuilder
+        run: |
+          KUBEBUILDER_VERSION="3.14.1" # ToDo: align versions, get this all from nix?
+          curl -L -o kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_linux_amd64
+          chmod +x kubebuilder
+          sudo mv kubebuilder /usr/local/bin/
+
+      - name: Generate Helm Chart
+        run: |
+          IMAGE_REF="ghcr.io/${{ github.repository_owner }}/cluster-local-lb:dev"
+          IMG=${IMAGE_REF} kubebuilder edit --plugins=helm/v2-alpha
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package and Push Helm Chart
+        run: |
+          helm package dist/chart --version "0.0.0-dev.${{ github.sha }}" --destination .
+
+          helm push cluster-local-lb-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts

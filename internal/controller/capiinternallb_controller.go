@@ -46,6 +46,14 @@ import (
 
 const lbFinalizer = "internallb.schaber.io/capi-internal-lb"
 
+func machineGVK() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   "cluster.x-k8s.io",
+		Version: "v1beta2",
+		Kind:    "Machine",
+	}
+}
+
 // TargetKey uniquely identifies an IP probed on behalf of a CapiInternalLb CR.
 type TargetKey struct {
 	NamespacedName types.NamespacedName
@@ -237,7 +245,7 @@ func (p *HealthProber) IsHealthy(key TargetKey) bool {
 	if state, ok := p.states[key]; ok {
 		return state.Status
 	}
-	return true
+	return false
 }
 
 // ToDo: make key 2-level to speed these up?
@@ -307,7 +315,7 @@ func (r *CapiInternalLbReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	// currently we do not really need a finalizer, since we don't access anything on the resource for deletion
-	if !cr.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !cr.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(cr, lbFinalizer) {
 			r.Prober.CleanupResource(req.NamespacedName)
 			controllerutil.RemoveFinalizer(cr, lbFinalizer)
@@ -465,11 +473,11 @@ func selectMachineIP(addresses []any, selection internallbv1alpha1.IPTypeSelecti
 			continue
 		}
 		switch addrType {
-		case "InternalIP":
+		case internallbv1alpha1.IPSelectorInternal:
 			if internalIP == "" {
 				internalIP = ip
 			}
-		case "ExternalIP":
+		case internallbv1alpha1.IPSelectorExternal:
 			if externalIP == "" {
 				externalIP = ip
 			}
@@ -499,11 +507,7 @@ func selectMachineIP(addresses []any, selection internallbv1alpha1.IPTypeSelecti
 
 func (r *CapiInternalLbReconciler) fetchControlPlaneIPs(ctx context.Context, cr *internallbv1alpha1.CapiInternalLb) ([]string, error) {
 	machines := &unstructured.UnstructuredList{}
-	machines.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "cluster.x-k8s.io",
-		Version: "v1beta2",
-		Kind:    "Machine",
-	})
+	machines.SetGroupVersionKind(machineGVK())
 	targetNamespace := cr.Namespace
 	if cr.Spec.ClusterRef.Namespace != "" {
 		targetNamespace = cr.Spec.ClusterRef.Namespace
@@ -563,11 +567,7 @@ func (r *CapiInternalLbReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// Define an Unstructured Machine prototype for watching CAPI Machine events
 	uMachine := &unstructured.Unstructured{}
-	uMachine.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "cluster.x-k8s.io",
-		Version: "v1beta2",
-		Kind:    "Machine",
-	})
+	uMachine.SetGroupVersionKind(machineGVK())
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&internallbv1alpha1.CapiInternalLb{}).

@@ -35,6 +35,11 @@ const (
 	IPTypeAuto     IPTypeSelection = "Auto"
 )
 
+const (
+	IPSelectorInternal string = "InternalIP"
+	IPSelectorExternal string = "ExternalIP"
+)
+
 // CapiInternalLbSpec defines the desired state of CapiInternalLb
 type CapiInternalLbSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster

@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	// "context"
 	"fmt"
 	"time"
 
@@ -30,15 +29,16 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	// ctrl "sigs.k8s.io/controller-runtime"
-	// "sigs.k8s.io/controller-runtime/pkg/event"
-	// "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	internallbv1alpha1 "github.com/coreflow-dev/cluster-local-lb.git/api/v1alpha1"
 )
 
+func capiAddress(aType, address string) map[string]any {
+	return map[string]any{"type": aType, "address": address}
+}
+
 // Helper to build dynamic CAPI Machine objects
-func createCAPIMachine(name, namespace, clusterName string, isControlPlane bool, internalIP, externalIP string, malformedAddrs bool) *unstructured.Unstructured {
+func createCAPIMachine(name, namespace, clusterName string, isControlPlane bool, internalIP, externalIP string, malformedAddrs bool) {
 	m := &unstructured.Unstructured{}
 	m.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "cluster.x-k8s.io",
@@ -75,78 +75,18 @@ func createCAPIMachine(name, namespace, clusterName string, isControlPlane bool,
 	} else {
 		var addrs []any
 		if internalIP != "" {
-			addrs = append(addrs, map[string]any{"type": "InternalIP", "address": internalIP})
+			addrs = append(addrs, capiAddress("InternalIP", internalIP))
 		}
 		if externalIP != "" {
-			addrs = append(addrs, map[string]any{"type": "ExternalIP", "address": externalIP})
+			addrs = append(addrs, capiAddress("ExternalIP", externalIP))
 		}
 		_ = unstructured.SetNestedSlice(m.Object, addrs, "status", "addresses")
 	}
 
 	Expect(k8sClient.Status().Update(ctx, m)).To(Succeed())
 
-	return m
+	// return m
 }
-
-/*var _ = Describe("CapiInternalLb Controller", func() {
-	Context("When reconciling a resource", func() {
-		const (
-			resourceName      = "test-resource"
-			resourceNamespace = "default"
-		)
-
-		ctx := context.Background()
-
-		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: resourceNamespace,
-		}
-		capiinternallb := &internallbv1alpha1.CapiInternalLb{}
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind CapiInternalLb")
-			err := k8sClient.Get(ctx, typeNamespacedName, capiinternallb)
-			if err != nil && errors.IsNotFound(err) {
-				resource := &internallbv1alpha1.CapiInternalLb{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: resourceNamespace,
-					},
-					// TODO(user): Specify other spec details if needed.
-				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			}
-		})
-
-		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &internallbv1alpha1.CapiInternalLb{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Cleanup the specific resource instance CapiInternalLb")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
-		It("should successfully reconcile the resource", func() {
-			By("Reconciling the created resource")
-
-			ev := make(chan event.GenericEvent, 100)
-			prober := NewHealthProber(ev)
-			controllerReconciler := &CapiInternalLbReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
-				Prober: prober,
-			}
-
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
-			})
-			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
-		})
-	})
-})*/
 
 var _ = Describe("CapiInternalLb Controller", func() {
 	const (
@@ -177,7 +117,7 @@ var _ = Describe("CapiInternalLb Controller", func() {
 			crName := "integration-lb"
 			clusterName := "cluster-alpha"
 
-			_ = createCAPIMachine("cp-1", nsName, clusterName, true, "10.0.0.5", "", false)
+			createCAPIMachine("cp-1", nsName, clusterName, true, "10.0.0.5", "", false)
 
 			cr := &internallbv1alpha1.CapiInternalLb{
 				ObjectMeta: metav1.ObjectMeta{Name: crName, Namespace: nsName},
@@ -233,7 +173,7 @@ var _ = Describe("CapiInternalLb Controller", func() {
 				g.Expect(slice.Endpoints).To(BeEmpty())
 			}, timeout, interval).Should(Succeed())
 
-			_ = createCAPIMachine("cp-dynamic", nsName, clusterName, true, "10.0.0.99", "", false)
+			createCAPIMachine("cp-dynamic", nsName, clusterName, true, "10.0.0.99", "", false)
 
 			Eventually(func(g Gomega) {
 				slice := &discoveryv1.EndpointSlice{}
@@ -277,8 +217,8 @@ var _ = Describe("CapiInternalLb Controller", func() {
 	Context("Unit Tests for Isolated Helper Methods", func() {
 		It("should correctly select IPs based on IPTypeSelection rule", func() {
 			addresses := []any{
-				map[string]any{"type": "InternalIP", "address": "10.0.0.1"},
-				map[string]any{"type": "ExternalIP", "address": "1.2.3.4"},
+				capiAddress(internallbv1alpha1.IPSelectorInternal, "10.0.0.1"),
+				capiAddress(internallbv1alpha1.IPSelectorExternal, "1.2.3.4"),
 			}
 
 			// Internal
@@ -298,7 +238,7 @@ var _ = Describe("CapiInternalLb Controller", func() {
 
 			// Fallback error when requesting External from Internal-only machine
 			internalOnly := []any{
-				map[string]any{"type": "InternalIP", "address": "10.0.0.1"},
+				capiAddress(internallbv1alpha1.IPSelectorInternal, "10.0.0.1"),
 			}
 			_, err = selectMachineIP(internalOnly, internallbv1alpha1.IPTypeExternal)
 			Expect(err).To(HaveOccurred())
